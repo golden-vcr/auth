@@ -1,0 +1,234 @@
+openapi: 3.0.3
+info:
+  version: 0.1.0
+  title: auth
+  description: |
+    The **auth** API handles user authentication and authorization for the Golden VCR
+    app, using the Twitch API to verify user identity and facilitate login.
+
+    Many parts of the Golden VCR platform do not require authentication: for example, a
+    user can interact in streams (via chat and other Twitch features such as follows,
+    polls, cheers, etc.) and have their activity recorded in the backend under their
+    Twitch User ID. Any such user is known to Golden VCR as a **viewer**.
+
+    Separately, a user may log in to https://goldenvcr.com by connecting their Twitch
+    account. This process follows the [Authorization code grant flow](https://dev.twitch.tv/docs/authentication/getting-tokens-oauth/#authorization-code-grant-flow):
+
+    1. The user clicks a **Log in via Twitch** link and is sent to an OAuth consent
+       screen hosted at https://id.twitch.tv/oauth2/authorize
+    2. The user is prompted to grant the Golden VCR Twitch App access to a limited
+       subset of their account information: namely, read-only access to the user's
+       followed channels and subscriptions.
+    3. If the user grants access, Twitch generates an authorization code and sends it
+       back to the GoldenVCR frontend at https://goldenvcr.com/auth
+    4. The GoldenVCR frontend uses this **auth** API to complete the authoriztion flow,
+       using the `POST /login` endpoint to send the authorization code to Twitch in
+       exchange for an access token and refresh token.
+    5. In response, the GoldenVCR receives those tokens along with the ID and username
+       of the authenticated user. The frontend caches those details in localStorage.
+
+    Once the Authorization code grant flow has been completed, the user has an
+    **identity** recorded in the Golden VCR backend.
+externalDocs:
+  description: 'github.com/golden-vcr/auth'
+  url: https://github.com/golden-vcr/auth
+servers:
+  - url: https://goldenvcr.com/api/auth
+tags:
+  - name: authentication
+    description: |-
+      Endpoints for handling user authentication via Twitch, used by the Golden VCR
+      webapp
+  - name: access
+    description: |-
+      Endpoints that verify a user's identity and level of access, used by other APIs in
+      order to authorize requests
+paths:
+  /login:
+    post:
+      tags:
+        - authentication
+      summary: |-
+        Exchanges a Twitch authorization code for a user access token
+      operationId: postLogin
+      parameters:
+        - in: query
+          name: code
+          required: true
+          schema:
+            type: string
+        - in: query
+          name: redirect_uri
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: |-
+            Login was successful: we have authenticated the user via Twitch and obtained
+            a user access token with the required scopes. The app may switch to a
+            logged-in state and begin authorizing API requests with the provided access
+            token.
+          content:
+            application/json:
+              examples:
+                loggedIn:
+                  $ref: '#/components/examples/authStateLoggedIn'
+        '400':
+          description: |-
+            Request was invalid due to missing `code` query parameter (should be set to
+            an authorization code received from Twitch via the OAuth authorization code
+            grant flow) or `redirect_uri` parameter.
+        '401':
+          description: |-
+            Login failed: the user should remain logged out, and the provided error may
+            be displayed to the user for context.
+          content:
+            application/json:
+              examples:
+                loggedOutWithError:
+                  $ref: '#/components/examples/authStateLoggedOutWithError'
+  /refresh:
+    post:
+      tags:
+        - authentication
+      summary: |-
+        Uses a Twitch refresh token to obtain a new user access token
+      operationId: postRefresh
+      responses:
+        '200':
+          description: |-
+            Refresh was successful: the user remains authenticated via Twitch, and we
+            have obtained a new access token which the app should begin using to
+            authorize API requests.
+          content:
+            application/json:
+              examples:
+                loggedIn:
+                  $ref: '#/components/examples/authStateLoggedIn'
+        '400':
+          description: |-
+            Request was invalid due to missing `Authorization` header (should contain a
+            Twitch refresh token).
+        '401':
+          description: |-
+            Refresh failed: the app should revert to a logged-out state, and all stored
+            user information should be purged.
+          content:
+            application/json:
+              examples:
+                loggedOutWithError:
+                  $ref: '#/components/examples/authStateLoggedOutWithError'
+      security:
+        - twitchRefreshToken: []
+  /logout:
+    post:
+      tags:
+        - authentication
+      summary: |-
+        Revokes a Twitch user access token
+      operationId: postLogout
+      responses:
+        '200':
+          description: |-
+            The provided user access token was successfully revoked: the app should
+            clear stored credentials and revert to a logged-out state.
+          content:
+            application/json:
+              examples:
+                loggedOut:
+                  $ref: '#/components/examples/authStateLoggedOut'
+        '400':
+          description: |-
+            Request was invalid due to missing `Authorization` header (should contain a
+            Twitch user access token).
+        '401':
+          description: |-
+            The provided token could not be validated. Regardless, the app should clear
+            stored credentials and revert to a logged-out state.
+          content:
+            application/json:
+              examples:
+                loggedOutWithError:
+                  $ref: '#/components/examples/authStateLoggedOutWithError'
+      security:
+        - twitchUserAccessToken: []
+  /access:
+    get:
+      tags:
+        - access
+      summary: |-
+        Check whether the user has access to the app, and with which role
+      operationId: getAccess
+      responses:
+        '200':
+          description: |-
+            The provided user access token is valid: the app can trust that the user
+            bearing this token is authenticated, and that requests made with that token
+            will be permitted up to the level of access indicated by `role`.
+          content:
+            application/json:
+              examples:
+                viewer:
+                  $ref: '#/components/examples/accessClaimsViewer'
+                broadcaster:
+                  $ref: '#/components/examples/accessClaimsBroadcaster'
+        '400':
+          description: |-
+            Request was invalid due to missing `Authorization` header (should contain a
+            Twitch user access token).
+        '401':
+          description: |-
+            The provided token could not be validated. The 401 error should be
+            propagated to the frontend, which may initiate a refresh via `POST /refresh`
+            and, if successful, attempt the original request again with the new token.
+      security:
+        - twitchUserAccessToken: []
+components:
+  examples:
+    authStateLoggedIn:
+      summary: User was successfully authenticated via Twitch
+      value:
+        loggedIn: true
+        user:
+          id: '90790024'
+          login: wasabimilkshake
+          displayName: wasabimilkshake
+        tokens:
+          accessToken: twitch-issued-user-access-token
+          refreshToken: twitch-issued-refresh-token
+          scopes:
+            - 'user:read:follows'
+            - 'user:read:subscriptions'
+    authStateLoggedOut:
+      summary: User is logged out
+      value:
+        loggedIn: false
+    authStateLoggedOutWithError:
+      summary: An error occurred during authentication
+      value:
+        loggedIn: false
+        error: Something went wrong
+    accessClaimsViewer:
+      summary: Token permits access as an ordinary viewer
+      value:
+        user:
+          id: '90790024'
+          login: wasabimilkshake
+          displayName: wasabimilkshake
+        role: viewer
+    accessClaimsBroadcaster:
+      summary: Token permits access as the broadcaster, i.e. GoldenVCR
+      value:
+        user:
+          id: '953753877'
+          login: goldenvcr
+          displayName: GoldenVCR
+        role: broadcaster
+  securitySchemes:
+    twitchUserAccessToken:
+      type: http
+      scheme: bearer
+    twitchRefreshToken:
+      type: http
+      scheme: bearer
