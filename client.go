@@ -32,10 +32,6 @@ type Client interface {
 	// that token has been granted a role that meets or exceeds the level of access
 	// required by 'role'
 	RequireAccess(role Role, next http.Handler) http.Handler
-
-	// GetClaims can be called from the final HTTP handler to retrieve the AccessClaims
-	// value that was stashed in the request context by RequireAccess
-	GetClaims(req *http.Request) (*AccessClaims, error)
 }
 
 // NewClient initializes an HTTP client configured to make requests against the
@@ -129,7 +125,9 @@ func (c *client) RequireAccess(role Role, next http.Handler) http.Handler {
 	})
 }
 
-func (c *client) GetClaims(req *http.Request) (*AccessClaims, error) {
+// GetClaims can be called from the final HTTP handler to retrieve the AccessClaims
+// value that was stashed in the request context by RequireAccess
+func GetClaims(req *http.Request) (*AccessClaims, error) {
 	value := req.Context().Value(contextKeyClaims)
 	if value == nil {
 		return nil, fmt.Errorf("could not parse claims: RequireAccess middleware was not installed in request-handler chain")
