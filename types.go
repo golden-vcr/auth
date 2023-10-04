@@ -1,5 +1,7 @@
 package auth
 
+import "fmt"
+
 type UserDetails struct {
 	Id          string `json:"id"`
 	Login       string `json:"login"`
@@ -25,6 +27,21 @@ const (
 	RoleViewer      Role = "viewer"
 	RoleBroadcaster Role = "broadcaster"
 )
+
+func (r Role) value() int {
+	switch r {
+	case RoleViewer:
+		return 0
+	case RoleBroadcaster:
+		return 99
+	default:
+		panic(fmt.Sprintf("unrecognized role: %s", r))
+	}
+}
+
+func (r Role) meetsOrExceeds(requiredRole Role) bool {
+	return r.value() >= requiredRole.value()
+}
 
 type AccessClaims struct {
 	User *UserDetails `json:"user"`
