@@ -65,7 +65,7 @@ func (c *client) CheckAccess(ctx context.Context, accessToken string) (*AccessCl
 
 	// Parse the response body, JSON-formatted, as an AccessClaims struct
 	contentType := res.Header.Get("content/type")
-	if !strings.HasPrefix(contentType, "application/json") {
+	if contentType != "" && !strings.HasPrefix(contentType, "application/json") {
 		return nil, fmt.Errorf("got unexpected content-type '%s' from GET %s", contentType, url)
 	}
 	var claims AccessClaims
