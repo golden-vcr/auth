@@ -46,7 +46,8 @@ func (s *Server) handleLogin(res http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	respondWithLoggedIn(res, twitchUser, twitchCredentials)
+	role := s.resolveUserRole(twitchUser.ID)
+	respondWithLoggedIn(res, role, twitchUser, twitchCredentials)
 }
 
 func (s *Server) handleRefresh(res http.ResponseWriter, req *http.Request) {
@@ -82,7 +83,8 @@ func (s *Server) handleRefresh(res http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	respondWithLoggedIn(res, twitchUser, twitchCredentials)
+	role := s.resolveUserRole(twitchUser.ID)
+	respondWithLoggedIn(res, role, twitchUser, twitchCredentials)
 }
 
 func (s *Server) handleLogout(res http.ResponseWriter, req *http.Request) {
@@ -101,6 +103,13 @@ func (s *Server) handleLogout(res http.ResponseWriter, req *http.Request) {
 		return
 	}
 	respondWithLoggedOut(res, "", http.StatusOK)
+}
+
+func (s *Server) resolveUserRole(twitchUserId string) auth.Role {
+	if twitchUserId == s.channelUserId {
+		return auth.RoleBroadcaster
+	}
+	return auth.RoleViewer
 }
 
 func respondToAuthFailure(res http.ResponseWriter, err error) {
@@ -125,9 +134,10 @@ func respondWithLoggedOut(res http.ResponseWriter, errorMessage string, status i
 	res.Write(data)
 }
 
-func respondWithLoggedIn(res http.ResponseWriter, twitchUser *helix.User, twitchCredentials *helix.AccessCredentials) {
+func respondWithLoggedIn(res http.ResponseWriter, role auth.Role, twitchUser *helix.User, twitchCredentials *helix.AccessCredentials) {
 	state := &auth.AuthState{
 		LoggedIn: true,
+		Role:     role,
 		User: &auth.UserDetails{
 			Id:          twitchUser.ID,
 			Login:       twitchUser.Login,

@@ -192,6 +192,7 @@ components:
         loggedIn: true
         user:
           id: '90790024'
+          role: viewer
           login: wasabimilkshake
           displayName: wasabimilkshake
         tokens:

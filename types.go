@@ -2,25 +2,6 @@ package auth
 
 import "fmt"
 
-type UserDetails struct {
-	Id          string `json:"id"`
-	Login       string `json:"login"`
-	DisplayName string `json:"displayName"`
-}
-
-type UserTokens struct {
-	AccessToken  string   `json:"accessToken"`
-	RefreshToken string   `json:"refreshToken"`
-	Scopes       []string `json:"scopes"`
-}
-
-type AuthState struct {
-	LoggedIn bool         `json:"loggedIn"`
-	User     *UserDetails `json:"user,omitempty"`
-	Tokens   *UserTokens  `json:"tokens,omitempty"`
-	Error    string       `json:"error,omitempty"`
-}
-
 type Role string
 
 const (
@@ -41,6 +22,26 @@ func (r Role) value() int {
 
 func (r Role) meetsOrExceeds(requiredRole Role) bool {
 	return r.value() >= requiredRole.value()
+}
+
+type UserDetails struct {
+	Id          string `json:"id"`
+	Login       string `json:"login"`
+	DisplayName string `json:"displayName"`
+}
+
+type UserTokens struct {
+	AccessToken  string   `json:"accessToken"`
+	RefreshToken string   `json:"refreshToken"`
+	Scopes       []string `json:"scopes"`
+}
+
+type AuthState struct {
+	LoggedIn bool         `json:"loggedIn"`
+	Role     Role         `json:"role,omitempty"`
+	User     *UserDetails `json:"user,omitempty"`
+	Tokens   *UserTokens  `json:"tokens,omitempty"`
+	Error    string       `json:"error,omitempty"`
 }
 
 type AccessClaims struct {
