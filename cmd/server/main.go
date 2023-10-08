@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"log"
 	"net/http"
-	"net/url"
 	"os"
 	"os/signal"
 	"syscall"
@@ -20,6 +19,7 @@ import (
 
 	"github.com/golden-vcr/auth/gen/queries"
 	"github.com/golden-vcr/auth/internal/server"
+	"github.com/golden-vcr/server-common/db"
 )
 
 type Config struct {
@@ -55,7 +55,7 @@ func main() {
 
 	// Configure our database connection and initialize a Queries struct, so we can read
 	// and write to the 'auth' schema in response to HTTP requests
-	connectionString := formatConnectionString(
+	connectionString := db.FormatConnectionString(
 		config.DatabaseHost,
 		config.DatabasePort,
 		config.DatabaseName,
@@ -109,15 +109,6 @@ func main() {
 	} else {
 		log.Fatalf("error running server: %v", err)
 	}
-}
-
-func formatConnectionString(host string, port int, dbname string, user string, password string, sslmode string) string {
-	urlencodedPassword := url.QueryEscape(password)
-	s := fmt.Sprintf("postgres://%s:%s@%s:%d/%s", user, urlencodedPassword, host, port, dbname)
-	if sslmode != "" {
-		s += fmt.Sprintf("?sslmode=%s", sslmode)
-	}
-	return s
 }
 
 func resolveTwitchChannelUserId(channelName string, clientId string, clientSecret string) (string, error) {
