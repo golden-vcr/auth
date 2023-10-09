@@ -2,9 +2,6 @@ package queries_test
 
 import (
 	"context"
-	"database/sql"
-	"fmt"
-	"strings"
 	"testing"
 
 	"github.com/golden-vcr/auth/gen/queries"
@@ -16,7 +13,7 @@ func Test_RecordUserLogin(t *testing.T) {
 	q := queries.New(tx)
 
 	// We should start with no user identities recorded
-	assertCount(t, tx, 0, "SELECT COUNT(*) FROM auth.identity")
+	querytest.AssertCount(t, tx, 0, "SELECT COUNT(*) FROM auth.identity")
 
 	// Recording a new user login should record a new identity, and the first/last login
 	// timestamps should be identical initially
@@ -24,7 +21,7 @@ func Test_RecordUserLogin(t *testing.T) {
 		TwitchUserID:      "1234",
 		TwitchDisplayName: "bungus",
 	})
-	assertCount(t, tx, 1, `
+	querytest.AssertCount(t, tx, 1, `
 		SELECT COUNT(*) FROM auth.identity
 			WHERE twitch_user_id = '1234' AND twitch_display_name = 'bungus'
 			AND first_logged_in_at = last_logged_in_at
@@ -38,36 +35,12 @@ func Test_RecordUserLogin(t *testing.T) {
 		TwitchUserID:      "1234",
 		TwitchDisplayName: "BunGus",
 	})
-	assertCount(t, tx, 1, `
+	querytest.AssertCount(t, tx, 1, `
 		SELECT COUNT(*) FROM auth.identity WHERE
 			twitch_user_id = '1234' AND twitch_display_name = 'BunGus'
 			-- AND first_logged_in_at < last_logged_in_at
 	`)
 
 	// We should end up with 1 user identity
-	assertCount(t, tx, 1, "SELECT COUNT(*) FROM auth.identity")
-}
-
-func assertCount(t *testing.T, tx *sql.Tx, wantCount int, query string, args ...any) {
-	row := tx.QueryRow(query, args...)
-
-	var count int
-	err := row.Scan(&count)
-	if err == nil && count != wantCount {
-		err = fmt.Errorf("expected count of %d; got %d", wantCount, count)
-	}
-
-	if err != nil {
-		t.Logf("With query:")
-		for _, line := range strings.Split(query, "\n") {
-			t.Logf("  %s", line)
-		}
-		if len(args) > 0 {
-			t.Logf("With args:")
-			for i, value := range args {
-				t.Logf(" $%d: %v", i+1, value)
-			}
-		}
-		t.Fatalf(err.Error())
-	}
+	querytest.AssertCount(t, tx, 1, "SELECT COUNT(*) FROM auth.identity")
 }
