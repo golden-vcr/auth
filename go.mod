@@ -4,7 +4,7 @@ go 1.21.1
 
 require (
 	github.com/codingconcepts/env v0.0.0-20200821220118-a8fbf8d84482
-	github.com/golden-vcr/server-common v0.0.0-20231008160834-a3155a36e1c0
+	github.com/golden-vcr/server-common v0.1.0
 	github.com/gorilla/mux v1.8.0
 	github.com/joho/godotenv v1.5.1
 	github.com/lib/pq v1.10.9
