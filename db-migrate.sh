@@ -16,11 +16,13 @@ function url_encode() {
     python3 -c 'import sys; import urllib.parse; print(urllib.parse.quote_plus(sys.argv[1]))' "$1"
 }
 
-if [ -f .env ]; then
-    source .env
-fi
-if [ -f bin/.env ]; then
-    source bin/.env
+if [ "$PGHOST" == "" ] || [ "$PGPORT" == "" ] || [ "$PGDATABASE" == "" ] || [ "$PGUSER" == "" ] || [ "$PGPASSWORD" == "" ]; then
+    if [ -f .env ]; then
+        source .env
+    fi
+    if [ -f bin/.env ]; then
+        source bin/.env
+    fi
 fi
 require_env 'PGHOST' "$PGHOST"
 require_env 'PGPORT' "$PGPORT"
