@@ -193,6 +193,7 @@ components:
         user:
           id: '90790024'
           role: viewer
+          profileImageUrl: https://static-cdn.jtvnw.net/jtv_user_pictures/d915eb39-4b27-43c1-b05e-8a384b44cb22-profile_image-70x70.png
           login: wasabimilkshake
           displayName: wasabimilkshake
         tokens:

@@ -136,8 +136,9 @@ func respondWithLoggedOut(res http.ResponseWriter, errorMessage string, status i
 
 func respondWithLoggedIn(res http.ResponseWriter, role auth.Role, twitchUser *helix.User, twitchCredentials *helix.AccessCredentials) {
 	state := &auth.AuthState{
-		LoggedIn: true,
-		Role:     role,
+		LoggedIn:        true,
+		Role:            role,
+		ProfileImageUrl: twitchUser.ProfileImageURL,
 		User: &auth.UserDetails{
 			Id:          twitchUser.ID,
 			Login:       twitchUser.Login,

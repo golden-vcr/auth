@@ -23,9 +23,10 @@ const (
 	MockTwitchAccessTokenAfterRefresh = "mock-twitch-access-token-02"
 	MockTwitchRefreshToken            = "mock-twitch-refresh-token"
 
-	MockTwitchUserId      = "8675309"
-	MockTwitchLogin       = "jenny"
-	MockTwitchDisplayName = "Jenny"
+	MockTwitchUserId          = "8675309"
+	MockTwitchLogin           = "jenny"
+	MockTwitchDisplayName     = "Jenny"
+	MockTwitchProfileImageUrl = "http://example.com/profile-images/jenny.png"
 )
 
 func Test_Server_handleLogin(t *testing.T) {
@@ -44,7 +45,7 @@ func Test_Server_handleLogin(t *testing.T) {
 			"https://any-redirect-uri.biz/whatever",
 			&mockAuthQueries{},
 			http.StatusOK,
-			`{"loggedIn":true,"role":"viewer","user":{"id":"8675309","login":"jenny","displayName":"Jenny"},"tokens":{"accessToken":"mock-twitch-access-token-01","refreshToken":"mock-twitch-refresh-token","scopes":["user:read:follows"]}}`,
+			`{"loggedIn":true,"role":"viewer","profileImageUrl":"http://example.com/profile-images/jenny.png","user":{"id":"8675309","login":"jenny","displayName":"Jenny"},"tokens":{"accessToken":"mock-twitch-access-token-01","refreshToken":"mock-twitch-refresh-token","scopes":["user:read:follows"]}}`,
 			true,
 		},
 		{
@@ -125,7 +126,7 @@ func Test_Server_handleRefresh(t *testing.T) {
 			fmt.Sprintf("Bearer %s", MockTwitchRefreshToken),
 			&mockAuthQueries{},
 			http.StatusOK,
-			`{"loggedIn":true,"role":"viewer","user":{"id":"8675309","login":"jenny","displayName":"Jenny"},"tokens":{"accessToken":"mock-twitch-access-token-02","refreshToken":"mock-twitch-refresh-token","scopes":["user:read:follows"]}}`,
+			`{"loggedIn":true,"role":"viewer","profileImageUrl":"http://example.com/profile-images/jenny.png","user":{"id":"8675309","login":"jenny","displayName":"Jenny"},"tokens":{"accessToken":"mock-twitch-access-token-02","refreshToken":"mock-twitch-refresh-token","scopes":["user:read:follows"]}}`,
 			true,
 		},
 		{
@@ -133,7 +134,7 @@ func Test_Server_handleRefresh(t *testing.T) {
 			MockTwitchRefreshToken,
 			&mockAuthQueries{},
 			http.StatusOK,
-			`{"loggedIn":true,"role":"viewer","user":{"id":"8675309","login":"jenny","displayName":"Jenny"},"tokens":{"accessToken":"mock-twitch-access-token-02","refreshToken":"mock-twitch-refresh-token","scopes":["user:read:follows"]}}`,
+			`{"loggedIn":true,"role":"viewer","profileImageUrl":"http://example.com/profile-images/jenny.png","user":{"id":"8675309","login":"jenny","displayName":"Jenny"},"tokens":{"accessToken":"mock-twitch-access-token-02","refreshToken":"mock-twitch-refresh-token","scopes":["user:read:follows"]}}`,
 			true,
 		},
 		{
@@ -301,9 +302,10 @@ func (m *authenticationTestClient) ResolveUserDetailsFromAccessToken(ctx context
 		return nil, fmt.Errorf("mock error")
 	}
 	return &helix.User{
-		ID:          MockTwitchUserId,
-		Login:       MockTwitchLogin,
-		DisplayName: MockTwitchDisplayName,
+		ID:              MockTwitchUserId,
+		Login:           MockTwitchLogin,
+		DisplayName:     MockTwitchDisplayName,
+		ProfileImageURL: MockTwitchProfileImageUrl,
 	}, nil
 }
 

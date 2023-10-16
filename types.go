@@ -37,11 +37,12 @@ type UserTokens struct {
 }
 
 type AuthState struct {
-	LoggedIn bool         `json:"loggedIn"`
-	Role     Role         `json:"role,omitempty"`
-	User     *UserDetails `json:"user,omitempty"`
-	Tokens   *UserTokens  `json:"tokens,omitempty"`
-	Error    string       `json:"error,omitempty"`
+	LoggedIn        bool         `json:"loggedIn"`
+	Role            Role         `json:"role,omitempty"`
+	ProfileImageUrl string       `json:"profileImageUrl,omitempty"`
+	User            *UserDetails `json:"user,omitempty"`
+	Tokens          *UserTokens  `json:"tokens,omitempty"`
+	Error           string       `json:"error,omitempty"`
 }
 
 type AccessClaims struct {
