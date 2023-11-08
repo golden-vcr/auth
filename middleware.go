@@ -69,6 +69,11 @@ func GetClaims(req *http.Request) (*AccessClaims, error) {
 	return claims, nil
 }
 
+// GetToken returns the authorization header value that was passed to the request
+func GetToken(req *http.Request) string {
+	return parseAuthorizationHeader(req.Header.Get("authorization"))
+}
+
 func parseAuthorizationHeader(value string) string {
 	prefix := "Bearer "
 	if strings.HasPrefix(value, prefix) {
