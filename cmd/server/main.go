@@ -2,7 +2,9 @@ package main
 
 import (
 	"context"
+	"crypto/x509"
 	"database/sql"
+	"encoding/pem"
 	"fmt"
 	"log"
 	"net/http"
@@ -36,6 +38,11 @@ type Config struct {
 	DatabaseUser     string `env:"PGUSER" required:"true"`
 	DatabasePassword string `env:"PGPASSWORD" required:"true"`
 	DatabaseSslMode  string `env:"PGSSLMODE"`
+
+	SigningKeyId  string `env:"AUTH_SIGNING_KEY_ID" required:"true"`
+	SigningKeyPem string `env:"AUTH_SIGNING_KEY_PEM" required:"true"`
+	JwksJson      string `env:"AUTH_JWKS_JSON" required:"true"`
+	SharedSecret  string `env:"AUTH_SHARED_SECRET" required:"true"`
 }
 
 func main() {
@@ -52,6 +59,16 @@ func main() {
 	// Shut down cleanly on signal
 	ctx, close := signal.NotifyContext(context.Background(), os.Interrupt, os.Kill, syscall.SIGTERM)
 	defer close()
+
+	// Parse the private key that we'll use to sign JWTs that we issue
+	pemBlock, _ := pem.Decode([]byte(config.SigningKeyPem))
+	if pemBlock == nil {
+		log.Fatalf("error decoding signing key PEM from env: %v", err)
+	}
+	signingKey, err := x509.ParsePKCS1PrivateKey(pemBlock.Bytes)
+	if err != nil {
+		log.Fatalf("error parsing signing key from PEM block: %v", err)
+	}
 
 	// Configure our database connection and initialize a Queries struct, so we can read
 	// and write to the 'auth' schema in response to HTTP requests
@@ -85,7 +102,7 @@ func main() {
 	}
 
 	// Initialize our HTTP server
-	srv := server.New(channelUserId, config.TwitchClientId, config.TwitchClientSecret, q)
+	srv := server.New(channelUserId, config.TwitchClientId, config.TwitchClientSecret, config.SharedSecret, config.SigningKeyId, signingKey, q)
 	r := mux.NewRouter()
 	srv.RegisterRoutes(r)
 	addr := fmt.Sprintf("%s:%d", config.BindAddr, config.ListenPort)

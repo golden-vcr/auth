@@ -35,10 +35,14 @@ externalDocs:
 servers:
   - url: https://goldenvcr.com/api/auth
 tags:
-  - name: authentication
+  - name: twitch-auth
     description: |-
       Endpoints for handling user authentication via Twitch, used by the Golden VCR
       webapp
+  - name: service-auth
+    descriptions: |-
+      Endpoints for issuing tokens that authorize internal services to operate on a
+      user's behalf, e.g. in response to their actions on Twitch
   - name: access
     description: |-
       Endpoints that verify a user's identity and level of access, used by other APIs in
@@ -47,7 +51,7 @@ paths:
   /login:
     post:
       tags:
-        - authentication
+        - twitch-auth
       summary: |-
         Exchanges a Twitch authorization code for a user access token
       operationId: postLogin
@@ -91,7 +95,7 @@ paths:
   /refresh:
     post:
       tags:
-        - authentication
+        - twitch-auth
       summary: |-
         Uses a Twitch refresh token to obtain a new user access token
       operationId: postRefresh
@@ -124,7 +128,7 @@ paths:
   /logout:
     post:
       tags:
-        - authentication
+        - twitch-auth
       summary: |-
         Revokes a Twitch user access token
       operationId: postLogout
@@ -153,6 +157,42 @@ paths:
                   $ref: '#/components/examples/authStateLoggedOutWithError'
       security:
         - twitchUserAccessToken: []
+  /service-token:
+    post:
+      tags:
+        - service-auth
+      summary: |-
+        Issues a JWT that authorizes an internal Golden VCR service to act on behalf of
+        a specific user
+      operationId: postServiceToken
+      description: |-
+        To authorize the request, the caller must supply the following headers:
+
+        - `x-hmac-request-id`: a unique ID to identify the request
+        - `x-hmac-request-timestamp`: timestamp at which the request was made
+        - `x-hmac-signature`: a signature computed from the concatenation of the request
+          ID, timestamp, and request body, using the auth service's shared HMAC secret
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ServiceTokenRequest'
+      responses:
+        '200':
+          description: |-
+            The request was authorized: the JWT returned in the response (issued by the
+            auth service) can now be supplied to any API endpoint that requires
+            viewer-level access in order to affect the targeted user.
+          content:
+            application/jwt:
+              example: eyJhbGciOiJSUzI1NiIsImtpZCI6ImExNzZiMDc0ZWJlODIyNjliOGZmODg0ZWEwN2YzMmY4MjRmOTQwYjc0NThkZjczNyIsInR5cCI6IkpXVCJ9.eyJleHAiOiIyMDIzLTEyLTA2VDIxOjI4OjI3LTA1OjAwIiwiaXNzIjoiMjAyMy0xMi0wNlQyMToxMzoyNy0wNTowMCIsInR3aXRjaF9kaXNwbGF5X25hbWUiOiJGb29CYXIiLCJ0d2l0Y2hfdXNlcl9pZCI6IjEyMzQiLCJ0d2l0Y2hfdXNlcl9sb2dpbiI6ImZvb2JhciJ9.A5CsU2CjxES9sN8L8q1daXcHJtZJhP7Xdg3zaZVJjXT2qcwDwbluM-4upSv_Flbiy2IfZBi9DmG3HgIpTtb-2p8vkss-_QdQ7iE5HwB8V29pCmPMl0X4HZxTIHIEVGp__5OODUfzWlBI4-c_zwadDotFhfhXpcU-a_qis4_D-znrJBpN99rD2yM1jv2SKFJ-2TcQU-S1U76UpnoIiWm1UkC_UdEUK5HInfd7vGhKkfDJKB6mY32j0mxacSTLPulNCfNeb-a-MExs1qT7suNbAUGPqBEJqOLzC79j0HP1IZjttTYS_N2rHypWT_i63egd3PoH9QyAAKfS1GI6AwRmDUta6cWbXIJV21jNhVHQvDBuhDOth4nT31p18Vy_PWOvEE3YGCqeOip_EcGNOoTdXGCS3mm-yNRjvnrFmDsfxvqGJFbHBwobtD4PXFJ7j4mcAZs5lLmBmefNMKzinf5KtuyZrFwBzeLpXbdYXeuzg_0b4G6D3ZRFlUPwuELGNmSSOH0HEudzOhhkULYW4sqglmdrDFOCyTtMiQYoYkSPVrrY4lpdB56i-K9taupgqE55WmMNQVWotaIr6__eQWZL8ieYRTAPxhEf7ph7xQz6dP8cp854-_IpJ42FpdXmCEL7r69pxunK8IFmsfLEZaz5m_kWlrndctiji49sfM55lgI
+        '400':
+          description: |-
+            Request was invalid due to a missing or malformed request payload.
+        '401':
+          description: |-
+            Request was invalid due to a missing or malformed x-hmac-* headers.
   /access:
     get:
       tags:
@@ -185,6 +225,16 @@ paths:
       security:
         - twitchUserAccessToken: []
 components:
+  schemas:
+    ServiceTokenRequest:
+      type: object
+      properties:
+        user:
+          type: object
+          example:
+            id: '90790024'
+            login: wasabimilkshake
+            displayName: wasabimilkshake
   examples:
     authStateLoggedIn:
       summary: User was successfully authenticated via Twitch

@@ -22,6 +22,8 @@ variables required in [`main.go`](./cmd/server/main.go). If you have the
 simply open a shell there and run:
 
 - `terraform output -raw twitch_api_env > ../auth/.env`
+- `terraform output -raw auth_signing_keys_env >> ../auth/.env`
+- `terraform output -raw auth_shared_secret_env >> ../auth/.env`
 - `./local-db.sh env >> ../auth/.env`
 
 ### Running the database

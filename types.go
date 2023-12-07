@@ -24,6 +24,10 @@ func (r Role) meetsOrExceeds(requiredRole Role) bool {
 	return r.value() >= requiredRole.value()
 }
 
+type ServiceTokenRequest struct {
+	User UserDetails `json:"user"`
+}
+
 type UserDetails struct {
 	Id          string `json:"id"`
 	Login       string `json:"login"`
