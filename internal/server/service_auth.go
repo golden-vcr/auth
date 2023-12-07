@@ -80,3 +80,8 @@ func (s *Server) handlePostServiceToken(res http.ResponseWriter, req *http.Reque
 	res.Header().Set("content-type", "application/jwt")
 	res.Write([]byte(jwtString))
 }
+
+func (s *Server) handleGetJWKS(res http.ResponseWriter, req *http.Request) {
+	res.Header().Set("content-type", "application/json")
+	res.Write(s.jwksJson)
+}

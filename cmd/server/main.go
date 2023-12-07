@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/x509"
 	"database/sql"
+	"encoding/json"
 	"encoding/pem"
 	"fmt"
 	"log"
@@ -70,6 +71,14 @@ func main() {
 		log.Fatalf("error parsing signing key from PEM block: %v", err)
 	}
 
+	// Parse the JWKS JSON payload that we'll serve at /.well-known/jwks.json in order
+	// to advertise the public key(s) that can be used to verify service tokens signed
+	// by the auth service
+	var jwksJson json.RawMessage
+	if err := json.Unmarshal([]byte(config.JwksJson), &jwksJson); err != nil {
+		log.Fatalf("error parsing JWKS JSON from env: %v", err)
+	}
+
 	// Configure our database connection and initialize a Queries struct, so we can read
 	// and write to the 'auth' schema in response to HTTP requests
 	connectionString := db.FormatConnectionString(
@@ -102,7 +111,7 @@ func main() {
 	}
 
 	// Initialize our HTTP server
-	srv := server.New(channelUserId, config.TwitchClientId, config.TwitchClientSecret, config.SharedSecret, config.SigningKeyId, signingKey, q)
+	srv := server.New(channelUserId, config.TwitchClientId, config.TwitchClientSecret, config.SharedSecret, config.SigningKeyId, signingKey, jwksJson, q)
 	r := mux.NewRouter()
 	srv.RegisterRoutes(r)
 	addr := fmt.Sprintf("%s:%d", config.BindAddr, config.ListenPort)
