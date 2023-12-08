@@ -64,8 +64,9 @@ func (s *Server) handlePostServiceToken(res http.ResponseWriter, req *http.Reque
 	// Our request is valid and authenticated: issue a short-lived JWT that permits
 	// viewer-level access to the requested user
 	token := jwt.NewWithClaims(jwt.SigningMethodRS256, jwt.MapClaims{
-		"iss":                 time.Now().Format(time.RFC3339),
-		"exp":                 time.Now().Add(15 * time.Minute).Format(time.RFC3339),
+		"iss":                 s.jwtIssuer,
+		"iat":                 time.Now().Unix(),
+		"exp":                 time.Now().Add(15 * time.Minute).Unix(),
 		"twitch_user_id":      payload.User.Id,
 		"twitch_user_login":   payload.User.Login,
 		"twitch_display_name": payload.User.DisplayName,

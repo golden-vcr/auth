@@ -14,17 +14,19 @@ type Server struct {
 	verifier        hmac.Verifier
 	jwtSigningKeyId string
 	jwtSigningKey   *rsa.PrivateKey
+	jwtIssuer       string
 	jwksJson        json.RawMessage
 	q               Queries
 }
 
-func New(channelUserId string, twitchClientId string, twitchClientSecret string, sharedSecret string, jwtSigningKeyId string, jwtSigningKey *rsa.PrivateKey, jwskJson json.RawMessage, q Queries) *Server {
+func New(channelUserId string, twitchClientId string, twitchClientSecret string, sharedSecret string, jwtSigningKeyId string, jwtSigningKey *rsa.PrivateKey, jwtIssuer string, jwskJson json.RawMessage, q Queries) *Server {
 	return &Server{
 		channelUserId:   channelUserId,
 		client:          NewTwitchClient(twitchClientId, twitchClientSecret),
 		verifier:        hmac.NewVerifier(sharedSecret),
 		jwtSigningKeyId: jwtSigningKeyId,
 		jwtSigningKey:   jwtSigningKey,
+		jwtIssuer:       jwtIssuer,
 		jwksJson:        jwskJson,
 		q:               q,
 	}

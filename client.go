@@ -2,11 +2,16 @@ package auth
 
 import (
 	"context"
+	"crypto/rsa"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"net/http"
 	"strings"
+	"sync"
+	"time"
+
+	"github.com/golang-jwt/jwt/v5"
 )
 
 // ErrUnauthorized indicates that the request failed due to invalid credentials: if this
@@ -25,21 +30,73 @@ type Client interface {
 
 // NewClient initializes an HTTP client configured to make requests against the
 // golden-vcr/auth server running at the given URL
-func NewClient(authUrl string) Client {
-	return &client{
-		authUrl: authUrl,
+func NewClient(ctx context.Context, authUrl string) (Client, error) {
+	c := &client{
+		authUrl:     authUrl,
+		jwtIssuer:   "https://goldenvcr.com/api/auth",
+		keyCacheTTL: 10 * time.Minute,
+		keyCache:    make(map[string]rsa.PublicKey),
 	}
+	if err := c.fetchJWKS(ctx); err != nil {
+		return nil, err
+	}
+	return c, nil
 }
 
 // client is the standard HTTP implementation of Client
 type client struct {
 	http.Client
-	authUrl string
+	authUrl   string
+	jwtIssuer string
+
+	keyCacheTTL       time.Duration
+	keyCache          map[string]rsa.PublicKey
+	keyCacheExpiresAt time.Time
+	keyCacheMu        sync.RWMutex
 }
 
 // CheckAccess calls GET /access and parses the response, returning ErrUnauthorized if
 // the auth server responds with a 401 error
 func (c *client) CheckAccess(ctx context.Context, accessToken string) (*AccessClaims, error) {
+	// First check to see if the token is a JWT that was issued by the auth service: if
+	// so, and if we can resolve the public key matching its 'kid' header and
+	// successfully verify that the key was issued by the auth service, then we can
+	// accept its claims client-side
+	token, err := c.parseAndVerifyJWT(ctx, accessToken)
+	if err == nil {
+		jwtClaims, ok := token.Claims.(jwt.MapClaims)
+		if !ok {
+			return nil, fmt.Errorf("failed to parse claims from JWT")
+		}
+		twitchUserId := jwtClaims["twitch_user_id"].(string)
+		if twitchUserId == "" {
+			return nil, fmt.Errorf("JWT is missing 'twitch_user_id' claim")
+		}
+		twitchUserLogin := jwtClaims["twitch_user_login"].(string)
+		if twitchUserLogin == "" {
+			return nil, fmt.Errorf("JWT is missing 'twitch_user_login' claim")
+		}
+		twitchDisplayName := jwtClaims["twitch_display_name"].(string)
+		if twitchDisplayName == "" {
+			return nil, fmt.Errorf("JWT is missing 'twitch_display_name' claim")
+		}
+		return &AccessClaims{
+			Role: RoleViewer,
+			User: &UserDetails{
+				Id:          twitchUserId,
+				Login:       twitchUserLogin,
+				DisplayName: twitchDisplayName,
+			},
+		}, nil
+	}
+
+	// parseAndVerifyJWT returned an error: if the error indicates that the input token
+	// wasn't a JWT or was issued by some other authority, continue to the fallback path
+	// of calling GET /access. For all other errors, abort.
+	if !errors.Is(err, ErrForeignToken) {
+		return nil, err
+	}
+
 	// Prepare a request to GET /access, with our configured URL for the auth server,
 	// supplying the provided access token as the value of the Authorization header
 	url := c.authUrl + "/access"

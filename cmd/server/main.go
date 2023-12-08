@@ -42,6 +42,7 @@ type Config struct {
 
 	SigningKeyId  string `env:"AUTH_SIGNING_KEY_ID" required:"true"`
 	SigningKeyPem string `env:"AUTH_SIGNING_KEY_PEM" required:"true"`
+	JwtIssuer     string `env:"AUTH_JWT_ISSUER" default:"https://goldenvcr.com/api/auth"`
 	JwksJson      string `env:"AUTH_JWKS_JSON" required:"true"`
 	SharedSecret  string `env:"AUTH_SHARED_SECRET" required:"true"`
 }
@@ -111,7 +112,7 @@ func main() {
 	}
 
 	// Initialize our HTTP server
-	srv := server.New(channelUserId, config.TwitchClientId, config.TwitchClientSecret, config.SharedSecret, config.SigningKeyId, signingKey, jwksJson, q)
+	srv := server.New(channelUserId, config.TwitchClientId, config.TwitchClientSecret, config.SharedSecret, config.SigningKeyId, signingKey, config.JwtIssuer, jwksJson, q)
 	r := mux.NewRouter()
 	srv.RegisterRoutes(r)
 	addr := fmt.Sprintf("%s:%d", config.BindAddr, config.ListenPort)
