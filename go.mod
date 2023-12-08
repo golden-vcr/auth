@@ -8,6 +8,7 @@ require (
 	github.com/golden-vcr/server-common v0.4.0
 	github.com/gorilla/mux v1.8.0
 	github.com/joho/godotenv v1.5.1
+	github.com/lestrrat-go/jwx v1.2.27
 	github.com/lib/pq v1.10.9
 	github.com/nicklaw5/helix/v2 v2.25.1
 	github.com/stretchr/testify v1.8.4
@@ -24,7 +25,6 @@ require (
 	github.com/lestrrat-go/blackmagic v1.0.2 // indirect
 	github.com/lestrrat-go/httpcc v1.0.1 // indirect
 	github.com/lestrrat-go/iter v1.0.2 // indirect
-	github.com/lestrrat-go/jwx v1.2.27 // indirect
 	github.com/lestrrat-go/option v1.0.1 // indirect
 	github.com/pkg/errors v0.9.1 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect

@@ -100,7 +100,7 @@ func (c *client) CheckAccess(ctx context.Context, accessToken string) (*AccessCl
 	// Prepare a request to GET /access, with our configured URL for the auth server,
 	// supplying the provided access token as the value of the Authorization header
 	url := c.authUrl + "/access"
-	req, err := http.NewRequest(http.MethodGet, url, nil)
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
 	if err != nil {
 		return nil, err
 	}
