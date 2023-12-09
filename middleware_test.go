@@ -16,31 +16,15 @@ import (
 func Test_RequireAccess(t *testing.T) {
 	// Prepare a mock auth.Client that accepts two tokens, one from a viewer and another
 	// from the broadcaster
-	c := authmock.NewClient().Allow("viewer-token", auth.RoleViewer, auth.UserDetails{
+	c := authmock.NewClient().AllowTwitchUserAccessToken("viewer-token", auth.RoleViewer, auth.UserDetails{
 		Id:          "1234",
 		Login:       "someviewer",
 		DisplayName: "SomeViewer",
-	}).Allow("broadcaster-token", auth.RoleBroadcaster, auth.UserDetails{
+	}).AllowTwitchUserAccessToken("broadcaster-token", auth.RoleBroadcaster, auth.UserDetails{
 		Id:          "31337",
 		Login:       "channelowner",
 		DisplayName: "ChannelOwner",
 	})
-
-	// Prepare an example HTTP request handler that expects to be called after the
-	// RequireAccess middleware runs
-	echoClaimsIfAuthorized := func(res http.ResponseWriter, req *http.Request) {
-		// GetClaims should never return an error so long as RequireAccess was called
-		claims, err := auth.GetClaims(req)
-		if err != nil {
-			http.Error(res, err.Error(), http.StatusInternalServerError)
-			return
-		}
-
-		// Echo the claims back at the user in JSON format
-		if err := json.NewEncoder(res).Encode(claims); err != nil {
-			http.Error(res, err.Error(), http.StatusInternalServerError)
-		}
-	}
 
 	// Run a series of tests in different configurations and verify that we get the
 	// expected results when calling the API as different users
@@ -110,5 +94,78 @@ func Test_RequireAccess(t *testing.T) {
 				assert.Contains(t, string(body), call.wantBodySubstr)
 			})
 		}
+	}
+}
+
+func Test_RequireAuthority(t *testing.T) {
+	// Prepare a mock auth.Client that accepts an ordinary user access token, as well as
+	// an authoritative JWT issued to an internal service by the auth server,
+	// authorizing access to a specific user's resources
+	c := authmock.NewClient().AllowTwitchUserAccessToken("viewer-token", auth.RoleViewer, auth.UserDetails{
+		Id:          "1234",
+		Login:       "someviewer",
+		DisplayName: "SomeViewer",
+	}).AllowAuthoritativeJWT("internal-jwt", auth.UserDetails{
+		Id:          "5678",
+		Login:       "anotherviewer",
+		DisplayName: "AnotherViewer",
+	})
+
+	// Run a series of tests in different configurations and verify that we get the
+	// expected results when calling the API as different users
+	tests := []struct {
+		token          string
+		wantStatus     int
+		wantBodySubstr string
+	}{
+		{
+			"",
+			http.StatusBadRequest,
+			"Internal JWT must be supplied in Authorization header",
+		},
+		{
+			"viewer-token",
+			http.StatusUnauthorized,
+			"access denied",
+		},
+		{
+			"internal-jwt",
+			http.StatusOK,
+			`{"user":{"id":"5678","login":"anotherviewer","displayName":"AnotherViewer"},"role":"viewer","authoritative":true}`,
+		},
+	}
+	for _, tt := range tests {
+		name := fmt.Sprintf("%s should get %d", tt.token, tt.wantStatus)
+		handler := auth.RequireAuthority(c, http.HandlerFunc(echoClaimsIfAuthorized))
+		t.Run(name, func(t *testing.T) {
+			req := httptest.NewRequest(http.MethodGet, "/", nil)
+			if tt.token != "" {
+				req.Header.Set("authorization", fmt.Sprintf("Bearer %s", tt.token))
+			}
+			res := httptest.NewRecorder()
+			handler.ServeHTTP(res, req)
+
+			assert.Equal(t, tt.wantStatus, res.Result().StatusCode)
+
+			body, err := io.ReadAll(res.Result().Body)
+			assert.NoError(t, err)
+			assert.Contains(t, string(body), tt.wantBodySubstr)
+		})
+	}
+}
+
+// echoClaimsIfAuthorized simply echoes the claims parsed from the request by the
+// middleware which runs before this handler
+func echoClaimsIfAuthorized(res http.ResponseWriter, req *http.Request) {
+	// GetClaims should never return an error so long as RequireAccess was called
+	claims, err := auth.GetClaims(req)
+	if err != nil {
+		http.Error(res, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	// Echo the claims back at the user in JSON format
+	if err := json.NewEncoder(res).Encode(claims); err != nil {
+		http.Error(res, err.Error(), http.StatusInternalServerError)
 	}
 }

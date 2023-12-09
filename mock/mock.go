@@ -16,10 +16,19 @@ func NewClient() *Client {
 	}
 }
 
-func (c *Client) Allow(token string, role auth.Role, user auth.UserDetails) *Client {
+func (c *Client) AllowTwitchUserAccessToken(token string, role auth.Role, user auth.UserDetails) *Client {
 	c.validTokens[token] = &auth.AccessClaims{
 		Role: role,
 		User: &user,
+	}
+	return c
+}
+
+func (c *Client) AllowAuthoritativeJWT(token string, user auth.UserDetails) *Client {
+	c.validTokens[token] = &auth.AccessClaims{
+		Role:          auth.RoleViewer,
+		User:          &user,
+		Authoritative: true,
 	}
 	return c
 }
