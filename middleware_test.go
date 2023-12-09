@@ -68,7 +68,7 @@ func Test_RequireAccess(t *testing.T) {
 			true,
 			auth.RoleViewer,
 			[]apiCall{
-				{"", http.StatusBadRequest, "Twitch user access token must be supplied in Authorization header"},
+				{"", http.StatusBadRequest, "Twitch user access token or internal JWT must be supplied in Authorization header"},
 				{"invalid-token", http.StatusUnauthorized, "access token was not accepted"},
 				{"viewer-token", http.StatusOK, `{"user":{"id":"1234","login":"someviewer","displayName":"SomeViewer"},"role":"viewer"}`},
 				{"broadcaster-token", http.StatusOK, `{"user":{"id":"31337","login":"channelowner","displayName":"ChannelOwner"},"role":"broadcaster"}`},
@@ -78,7 +78,7 @@ func Test_RequireAccess(t *testing.T) {
 			true,
 			auth.RoleBroadcaster,
 			[]apiCall{
-				{"", http.StatusBadRequest, "Twitch user access token must be supplied in Authorization header"},
+				{"", http.StatusBadRequest, "Twitch user access token or internal JWT must be supplied in Authorization header"},
 				{"invalid-token", http.StatusUnauthorized, "access token was not accepted"},
 				{"viewer-token", http.StatusForbidden, "insufficient access: requires broadcaster; you are viewer"},
 				{"broadcaster-token", http.StatusOK, `{"user":{"id":"31337","login":"channelowner","displayName":"ChannelOwner"},"role":"broadcaster"}`},

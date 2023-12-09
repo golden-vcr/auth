@@ -75,7 +75,11 @@ func (c *serviceClient) RequestServiceToken(ctx context.Context, payload Service
 	// that carries the token string in the response body, with content-type
 	// 'application/jwt'
 	if res.StatusCode != http.StatusOK && res.StatusCode != http.StatusCreated {
-		return "", fmt.Errorf("got response %d from POST %s", res.StatusCode, url)
+		suffix := ""
+		if body, err := io.ReadAll(res.Body); err == nil {
+			suffix = fmt.Sprintf(": %s", body)
+		}
+		return "", fmt.Errorf("got response %d from POST %s%s", res.StatusCode, url, suffix)
 	}
 	contentType := res.Header.Get("content-type")
 	if !strings.HasPrefix(contentType, "application/jwt") {

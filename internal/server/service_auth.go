@@ -48,6 +48,10 @@ func (s *Server) handlePostServiceToken(res http.ResponseWriter, req *http.Reque
 		http.Error(res, err.Error(), http.StatusBadRequest)
 		return
 	}
+	if payload.Service == "" {
+		http.Error(res, "invalid payload: 'service' is required", http.StatusBadRequest)
+		return
+	}
 	if payload.User.Id == "" {
 		http.Error(res, "invalid payload: 'user.id' is required", http.StatusBadRequest)
 		return
@@ -67,6 +71,7 @@ func (s *Server) handlePostServiceToken(res http.ResponseWriter, req *http.Reque
 		"iss":                 s.jwtIssuer,
 		"iat":                 time.Now().Unix(),
 		"exp":                 time.Now().Add(15 * time.Minute).Unix(),
+		"gvcr_service":        payload.Service,
 		"twitch_user_id":      payload.User.Id,
 		"twitch_user_login":   payload.User.Login,
 		"twitch_display_name": payload.User.DisplayName,

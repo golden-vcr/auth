@@ -68,6 +68,7 @@ func (c *client) CheckAccess(ctx context.Context, accessToken string) (*AccessCl
 		if !ok {
 			return nil, fmt.Errorf("failed to parse claims from JWT")
 		}
+		gvcrService := jwtClaims["gvcr_service"].(string)
 		twitchUserId := jwtClaims["twitch_user_id"].(string)
 		if twitchUserId == "" {
 			return nil, fmt.Errorf("JWT is missing 'twitch_user_id' claim")
@@ -87,6 +88,7 @@ func (c *client) CheckAccess(ctx context.Context, accessToken string) (*AccessCl
 				Login:       twitchUserLogin,
 				DisplayName: twitchDisplayName,
 			},
+			Authoritative: gvcrService != "",
 		}, nil
 	}
 

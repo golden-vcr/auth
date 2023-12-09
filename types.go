@@ -25,7 +25,8 @@ func (r Role) meetsOrExceeds(requiredRole Role) bool {
 }
 
 type ServiceTokenRequest struct {
-	User UserDetails `json:"user"`
+	Service string      `json:"service"`
+	User    UserDetails `json:"user"`
 }
 
 type UserDetails struct {
@@ -50,6 +51,7 @@ type AuthState struct {
 }
 
 type AccessClaims struct {
-	User *UserDetails `json:"user"`
-	Role Role         `json:"role"`
+	User          *UserDetails `json:"user"`
+	Role          Role         `json:"role"`
+	Authoritative bool         `json:"authoritative,omitempty"`
 }
