@@ -1,28 +1,24 @@
 package main
 
 import (
-	"context"
 	"crypto/x509"
 	"database/sql"
 	"encoding/json"
 	"encoding/pem"
 	"fmt"
-	"log"
 	"net/http"
 	"os"
-	"os/signal"
-	"syscall"
 
 	"github.com/codingconcepts/env"
 	"github.com/gorilla/mux"
 	"github.com/joho/godotenv"
 	_ "github.com/lib/pq"
 	"github.com/nicklaw5/helix/v2"
-	"golang.org/x/sync/errgroup"
 
 	"github.com/golden-vcr/auth/gen/queries"
 	"github.com/golden-vcr/auth/internal/server"
 	"github.com/golden-vcr/server-common/db"
+	"github.com/golden-vcr/server-common/entry"
 )
 
 type Config struct {
@@ -48,28 +44,27 @@ type Config struct {
 }
 
 func main() {
+	app := entry.NewApplication("auth")
+	defer app.Stop()
+
 	// Parse config from environment variables
 	err := godotenv.Load()
 	if err != nil && !os.IsNotExist(err) {
-		log.Fatalf("error loading .env file: %v", err)
+		app.Fail("Failed to load .env file", err)
 	}
 	config := Config{}
 	if err := env.Set(&config); err != nil {
-		log.Fatalf("error loading config: %v", err)
+		app.Fail("Failed to load config", err)
 	}
-
-	// Shut down cleanly on signal
-	ctx, close := signal.NotifyContext(context.Background(), os.Interrupt, os.Kill, syscall.SIGTERM)
-	defer close()
 
 	// Parse the private key that we'll use to sign JWTs that we issue
 	pemBlock, _ := pem.Decode([]byte(config.SigningKeyPem))
 	if pemBlock == nil {
-		log.Fatalf("error decoding signing key PEM from env: %v", err)
+		app.Fail("Failed to decode signing key PEM from env", err)
 	}
 	signingKey, err := x509.ParsePKCS1PrivateKey(pemBlock.Bytes)
 	if err != nil {
-		log.Fatalf("error parsing signing key from PEM block: %v", err)
+		app.Fail("Failed to parse signing key from PEM block", err)
 	}
 
 	// Parse the JWKS JSON payload that we'll serve at /.well-known/jwks.json in order
@@ -77,7 +72,7 @@ func main() {
 	// by the auth service
 	var jwksJson json.RawMessage
 	if err := json.Unmarshal([]byte(config.JwksJson), &jwksJson); err != nil {
-		log.Fatalf("error parsing JWKS JSON from env: %v", err)
+		app.Fail("Failed to parse JWKS JSON from env", err)
 	}
 
 	// Configure our database connection and initialize a Queries struct, so we can read
@@ -92,11 +87,11 @@ func main() {
 	)
 	db, err := sql.Open("postgres", connectionString)
 	if err != nil {
-		log.Fatalf("error opening database: %v", err)
+		app.Fail("Failed to open sql.DB", err)
 	}
 	defer db.Close()
 	if err := db.Ping(); err != nil {
-		log.Fatalf("error connecting to database: %v", err)
+		app.Fail("Failed to connect to database", err)
 	}
 	q := queries.New(db)
 
@@ -108,34 +103,17 @@ func main() {
 		config.TwitchClientSecret,
 	)
 	if err != nil {
-		log.Fatalf("error getting Twitch channel user ID: %v", err)
+		app.Fail("Failed to get Twitch channel user ID", err)
 	}
 
 	// Initialize our HTTP server
 	srv := server.New(channelUserId, config.TwitchClientId, config.TwitchClientSecret, config.SharedSecret, config.SigningKeyId, signingKey, config.JwtIssuer, jwksJson, q)
 	r := mux.NewRouter()
 	srv.RegisterRoutes(r)
-	addr := fmt.Sprintf("%s:%d", config.BindAddr, config.ListenPort)
-	server := &http.Server{Addr: addr, Handler: r}
 
 	// Handle incoming HTTP connections until our top-level context is canceled, at
 	// which point shut down cleanly
-	fmt.Printf("Listening on %s...\n", addr)
-	var wg errgroup.Group
-	wg.Go(server.ListenAndServe)
-
-	select {
-	case <-ctx.Done():
-		fmt.Printf("Received signal; closing server...\n")
-		server.Shutdown(context.Background())
-	}
-
-	err = wg.Wait()
-	if err == http.ErrServerClosed {
-		fmt.Printf("Server closed.\n")
-	} else {
-		log.Fatalf("error running server: %v", err)
-	}
+	entry.RunServer(app, r, config.BindAddr, int(config.ListenPort))
 }
 
 func resolveTwitchChannelUserId(channelName string, clientId string, clientSecret string) (string, error) {
