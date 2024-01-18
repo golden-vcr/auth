@@ -5,7 +5,7 @@ go 1.21.1
 require (
 	github.com/codingconcepts/env v0.0.0-20200821220118-a8fbf8d84482
 	github.com/golang-jwt/jwt/v5 v5.2.0
-	github.com/golden-vcr/server-common v0.5.0
+	github.com/golden-vcr/server-common v0.5.1
 	github.com/gorilla/mux v1.8.0
 	github.com/joho/godotenv v1.5.1
 	github.com/lestrrat-go/jwx v1.2.27

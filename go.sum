@@ -14,6 +14,8 @@ github.com/golang-jwt/jwt/v5 v5.2.0 h1:d/ix8ftRUorsN+5eMIlF4T6J8CAt9rch3My2winC1
 github.com/golang-jwt/jwt/v5 v5.2.0/go.mod h1:pqrtFR0X4osieyHYxtmOUWsAWrfe1Q5UVIyoH402zdk=
 github.com/golden-vcr/server-common v0.5.0 h1:tORtWNtqRaUyVOStYE634tDfvo+XG0a6oe5McwdoxjA=
 github.com/golden-vcr/server-common v0.5.0/go.mod h1:hhTCD/1L+HM9D9CdarR4o5MNaIDDxU29sns4AYrGCk8=
+github.com/golden-vcr/server-common v0.5.1 h1:BhSy6FuFhTdmlTXO24iXsGOHdEIchwzOM55GOq5seaY=
+github.com/golden-vcr/server-common v0.5.1/go.mod h1:hhTCD/1L+HM9D9CdarR4o5MNaIDDxU29sns4AYrGCk8=
 github.com/google/uuid v1.4.0 h1:MtMxsa51/r9yyhkyLsVeVt0B+BGQZzpQiTQ4eHZ8bc4=
 github.com/google/uuid v1.4.0/go.mod h1:TIyPZe4MgqvfeYDBFedMoGGpEw/LqOeaOT+nhxU+yHo=
 github.com/gorilla/mux v1.8.0 h1:i40aqfkR1h2SlN9hojwV5ZA91wcXFOvkdNIeFDP5koI=
