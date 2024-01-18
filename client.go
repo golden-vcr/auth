@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
+	"github.com/golden-vcr/server-common/entry"
 )
 
 // ErrUnauthorized indicates that the request failed due to invalid credentials: if this
@@ -106,6 +107,7 @@ func (c *client) CheckAccess(ctx context.Context, accessToken string) (*AccessCl
 	if err != nil {
 		return nil, err
 	}
+	req = entry.ConveyRequestId(ctx, req)
 	req.Header.Set("authorization", fmt.Sprintf("Bearer %s", accessToken))
 
 	// Make the request and ensure that it completed successfully
