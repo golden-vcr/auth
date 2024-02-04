@@ -21,7 +21,7 @@ On a Linux or WSL system:
       [Docker](https://docs.docker.com/engine/install/)).
 3. From the root of this repository:
     - Run [`./db-migrate.sh`](./db-migrate.sh) to apply database migrations.
-    - Run [`go run cmd/server/main.go`](./cmd/server/main.go) to start up the server.
+    - Run [`go run ./cmd/server`](./cmd/server/main.go) to start up the server.
 
 Once done, the auth server will be running at http://localhost:5002.
 
