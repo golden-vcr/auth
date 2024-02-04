@@ -10,11 +10,12 @@ For more detail, see:
 On a Linux or WSL system:
 
 1. Install [Go 1.21](https://go.dev/doc/install)
-2. Clone the [`terraform`](https://github.com/golden-vcr/terraform) repo alongside this
-   one, and from the root of that repo:
+2. Clone the [**terraform**](https://github.com/golden-vcr/terraform) repo alongside
+   this one, and from the root of that repo:
     - Ensure that the module is initialized (via `terraform init`)
     - Ensure that valid terraform state is present
-    - Run `terraform output -raw env_auth > ../auth/.env` to populate an `.env` file.
+    - Run `terraform output -raw env_auth_local > ../auth/.env` to populate an `.env`
+      file.
     - Run [`./local-db.sh up`](https://github.com/golden-vcr/terraform/blob/main/local-db.sh)
       to ensure that a Postgres server is running locally (requires
       [Docker](https://docs.docker.com/engine/install/)).
