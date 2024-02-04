@@ -29,18 +29,18 @@ type Config struct {
 	TwitchClientId     string `env:"TWITCH_CLIENT_ID" required:"true"`
 	TwitchClientSecret string `env:"TWITCH_CLIENT_SECRET" required:"true"`
 
+	SigningKeyId  string `env:"AUTH_SIGNING_KEY_ID" required:"true"`
+	SigningKeyPem string `env:"AUTH_SIGNING_KEY_PEM" required:"true"`
+	JwtIssuer     string `env:"AUTH_JWT_ISSUER" default:"https://goldenvcr.com/api/auth"`
+	JwksJson      string `env:"AUTH_JWKS_JSON" required:"true"`
+	SharedSecret  string `env:"AUTH_SHARED_SECRET" required:"true"`
+
 	DatabaseHost     string `env:"PGHOST" required:"true"`
 	DatabasePort     int    `env:"PGPORT" required:"true"`
 	DatabaseName     string `env:"PGDATABASE" required:"true"`
 	DatabaseUser     string `env:"PGUSER" required:"true"`
 	DatabasePassword string `env:"PGPASSWORD" required:"true"`
 	DatabaseSslMode  string `env:"PGSSLMODE"`
-
-	SigningKeyId  string `env:"AUTH_SIGNING_KEY_ID" required:"true"`
-	SigningKeyPem string `env:"AUTH_SIGNING_KEY_PEM" required:"true"`
-	JwtIssuer     string `env:"AUTH_JWT_ISSUER" default:"https://goldenvcr.com/api/auth"`
-	JwksJson      string `env:"AUTH_JWKS_JSON" required:"true"`
-	SharedSecret  string `env:"AUTH_SHARED_SECRET" required:"true"`
 }
 
 func main() {
